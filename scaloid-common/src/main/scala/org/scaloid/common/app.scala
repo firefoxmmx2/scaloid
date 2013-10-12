@@ -43,7 +43,7 @@ import android.view.WindowManager.LayoutParams._
 import scala.collection.mutable.ArrayBuffer
 import Implicits._
 import scala.deprecated
-
+import android.telephony.SmsManager
 
 trait TraitActivity[V <: Activity] {
 
@@ -60,8 +60,8 @@ trait TraitActivity[V <: Activity] {
 
   def find[V <: View](id: Int): V = basis.findViewById(id).asInstanceOf[V]
 
-  def runOnUiThread (f: => Unit)  {
-    if(uiThread == Thread.currentThread) {
+  def runOnUiThread(f: => Unit) {
+    if (uiThread == Thread.currentThread) {
       f
     } else {
       handler.post(new Runnable() {
@@ -124,12 +124,12 @@ trait SActivity extends Activity with SContext with TraitActivity[SActivity] wit
 
   protected override def onCreate(b: Bundle) {
     super.onCreate(b)
-    onCreateBodies.foreach(_ ())
+    onCreateBodies.foreach(_())
   }
 
   override def onStart {
     super.onStart()
-    onStartBodies.foreach(_ ())
+    onStartBodies.foreach(_())
   }
 
   protected val onStartBodies = new ArrayBuffer[() => Any]
@@ -142,7 +142,7 @@ trait SActivity extends Activity with SContext with TraitActivity[SActivity] wit
 
   override def onResume {
     super.onResume()
-    onResumeBodies.foreach(_ ())
+    onResumeBodies.foreach(_())
   }
 
   protected val onResumeBodies = new ArrayBuffer[() => Any]
@@ -154,7 +154,7 @@ trait SActivity extends Activity with SContext with TraitActivity[SActivity] wit
   }
 
   override def onPause {
-    onPauseBodies.foreach(_ ())
+    onPauseBodies.foreach(_())
     super.onPause()
   }
 
@@ -167,7 +167,7 @@ trait SActivity extends Activity with SContext with TraitActivity[SActivity] wit
   }
 
   override def onStop {
-    onStopBodies.foreach(_ ())
+    onStopBodies.foreach(_())
     super.onStop()
   }
 
@@ -180,7 +180,7 @@ trait SActivity extends Activity with SContext with TraitActivity[SActivity] wit
   }
 
   override def onDestroy {
-    onDestroyBodies.foreach(_ ())
+    onDestroyBodies.foreach(_())
     super.onDestroy()
   }
 }
@@ -210,7 +210,6 @@ trait ScreenOnActivity extends SActivity {
   }
 }
 
-
 /**
  * Enriched trait of the class android.app.Service. To enable Scaloid support for subclasses of android.app.Service, extend this trait.
  */
@@ -223,11 +222,11 @@ trait SService extends Service with SContext with Destroyable with Creatable wit
 
   override def onCreate() {
     super.onCreate()
-    onCreateBodies.foreach(_ ())
+    onCreateBodies.foreach(_())
   }
 
   override def onDestroy() {
-    onDestroyBodies.foreach(_ ())
+    onDestroyBodies.foreach(_())
     super.onDestroy()
   }
 }
@@ -271,7 +270,6 @@ trait LocalService extends SService {
 class AlertDialogBuilder(_title: CharSequence = null, _message: CharSequence = null)(implicit context: Context) extends AlertDialog.Builder(context) {
   if (_title != null) setTitle(_title)
   if (_message != null) setMessage(_message)
-
 
   @inline def positiveButton(name: CharSequence = android.R.string.yes, onClick: => Unit = {}): AlertDialogBuilder =
     positiveButton(name, (_, _) => {
@@ -327,5 +325,54 @@ class AlertDialogBuilder(_title: CharSequence = null, _message: CharSequence = n
    * Shows the dialog that is currently building.
    * Because this method runs runOnUiThread internally, you can call this method from any thread.
    */
-  override def show():AlertDialog = runOnUiThread(super.show())
+  override def show(): AlertDialog = runOnUiThread(super.show())
+}
+
+trait TraitSmsManager[V <: SmsManager] {
+  val SMS_URI = "content://sms"
+  val SMS_URI_INBOX = "content://sms/inbox"
+  val SMS_URI_SENT = "content://sms/sent"
+  val SMS_URI_DRAFT = "content://sms/draft"
+  val SMS_URI_OUTBOX = "content://sms/outbox"
+  val SMS_URI_FAILED = "content://sms/failed"
+  val SMS_URI_QUEUED = "content://sms/queued"
+
+  val MESSAGE_TYPE_ALL = 0
+  val MESSAGE_TYPE_INBOX = 1
+  val MESSAGE_TYPE_SENT = 2
+  val MESSAGE_TYPE_DRAFT = 3
+  val MESSAGE_TYPE_OUTBOX = 4
+  val MESSAGE_TYPE_FAILED = 5 // for failed outgoing messages  
+  val MESSAGE_TYPE_QUEUED = 6 // for messages to send later  
+
+  val MESSAGE_READ_TYPE_UNREAD = 0
+  val MESSAGE_READ_TYPE_READED = 1
+
+  val SMS_THREAD_ID = "thread_id"
+  val SMS_ADDRESS = "address"
+  val SMS_PERSON = "person"
+  val SMS_DATE = "date"
+  val SMS_PROTOCOL = "protocol"
+  val SMS_READ = "read"
+  val SMS_STATUS = "status"
+  val SMS_TYPE = "type"
+  val SMS_REPLY_PATH_PRESENT = "reply_path_present"
+  val SMS_SUBJECT = "subject"
+  val SMS_BODY = "body"
+  val SMS_SERVICE_CENTER = "service_center"
+  val SMS_LOCKED = "locked"
+
+  val SMS_STATUS_NONE = -1
+  val SMS_STATUS_COMPLETE = 0
+  val SMS_STATUS_PENDING = 64
+  val SMS_STATUS_FAILD = 128
+  def basis: V
+
+  def getDefault() = SmsManager.getDefault()
+
+}
+
+object SSmsManager extends TraitSmsManager[SmsManager] {
+  def basis = getDefault
+
 }
