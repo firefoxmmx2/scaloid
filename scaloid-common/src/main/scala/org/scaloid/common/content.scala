@@ -45,17 +45,19 @@ import scala.reflect._
 class EventSource0[T] extends ArrayBuffer[() => T] {
   def apply(e: => T) = append(() => e)
 
-  def run() {
-    foreach(_())
-  }
+  def run() = map(_())
 }
 
-class EventSource1[T <: Function1[_, _]] extends ArrayBuffer[T] {
-  def apply(e: T) = append(e)
+class EventSource1[Arg1, Ret] extends ArrayBuffer[Arg1 => Ret] {
+  def apply(e: Arg1 => Ret) = append(e)
+
+  def run(arg: Arg1) = map(_(arg))
 }
 
-class EventSource2[T <: Function2[_, _, _]] extends ArrayBuffer[T] {
-  def apply(e: T) = append(e)
+class EventSource2[Arg1, Arg2, Ret] extends ArrayBuffer[(Arg1, Arg2) => Ret] {
+  def apply(e: (Arg1, Arg2) => Ret) = append(e)
+
+  def run(arg1: Arg1, arg2: Arg2) = map(_(arg1, arg2))
 }
 
 /**
@@ -94,12 +96,12 @@ trait Registerable {
 
 
 /**
-* Automatically generated enriching class of android.content.Context.
-*/
+ * Automatically generated enriching class of `[[https://developer.android.com/reference/android/content/Context.html android.content.Context]]`.
+ */
 class RichContext[V <: android.content.Context](val basis: V) extends TraitContext[V]
 
 /**
- * Automatically generated helper trait of android.content.Context. This contains several property accessors.
+ * Automatically generated helper trait of `[[https://developer.android.com/reference/android/content/Context.html android.content.Context]]`. This contains several property accessors.
  */
 trait TraitContext[V <: android.content.Context] {
 
@@ -108,46 +110,142 @@ trait TraitContext[V <: android.content.Context] {
   implicit val ctx = basis
 
 
+  /**
+   * Shortcut for `[[https://developer.android.com/reference/android/content/Context.html#getApplicationContext() getApplicationContext()]]`
+   */
   @inline def applicationContext = basis.getApplicationContext
 
+
+  /**
+   * Shortcut for `[[https://developer.android.com/reference/android/content/Context.html#getApplicationInfo() getApplicationInfo()]]`
+   */
   @inline def applicationInfo = basis.getApplicationInfo
 
+
+  /**
+   * Shortcut for `[[https://developer.android.com/reference/android/content/Context.html#getAssets() getAssets()]]`
+   */
   @inline def assets = basis.getAssets
 
+
+  /**
+   * Shortcut for `[[https://developer.android.com/reference/android/content/Context.html#getCacheDir() getCacheDir()]]`
+   */
   @inline def cacheDir = basis.getCacheDir
 
+
+  /**
+   * Shortcut for `[[https://developer.android.com/reference/android/content/Context.html#getClassLoader() getClassLoader()]]`
+   */
   @inline def classLoader = basis.getClassLoader
 
+
+  /**
+   * Shortcut for `[[https://developer.android.com/reference/android/content/Context.html#getContentResolver() getContentResolver()]]`
+   */
   @inline def contentResolver = basis.getContentResolver
 
+
+  /**
+   * Shortcut for `[[https://developer.android.com/reference/android/content/Context.html#getExternalCacheDir() getExternalCacheDir()]]`
+   */
   @inline def externalCacheDir = basis.getExternalCacheDir
 
+
+  /**
+   * Shortcut for `[[https://developer.android.com/reference/android/content/Context.html#getFilesDir() getFilesDir()]]`
+   */
   @inline def filesDir = basis.getFilesDir
 
+
+  /**
+   * Shortcut for `[[https://developer.android.com/reference/android/content/Context.html#getMainLooper() getMainLooper()]]`
+   */
   @inline def mainLooper = basis.getMainLooper
 
+
+  /**
+   * Shortcut for `[[https://developer.android.com/reference/android/content/Context.html#getPackageCodePath() getPackageCodePath()]]`
+   */
   @inline def packageCodePath = basis.getPackageCodePath
 
+
+  /**
+   * Shortcut for `[[https://developer.android.com/reference/android/content/Context.html#getPackageManager() getPackageManager()]]`
+   */
   @inline def packageManager = basis.getPackageManager
 
+
+  /**
+   * Shortcut for `[[https://developer.android.com/reference/android/content/Context.html#getPackageName() getPackageName()]]`
+   */
   @inline def packageName = basis.getPackageName
 
+
+  /**
+   * Shortcut for `[[https://developer.android.com/reference/android/content/Context.html#getPackageResourcePath() getPackageResourcePath()]]`
+   */
   @inline def packageResourcePath = basis.getPackageResourcePath
 
+
+  /**
+   * Shortcut for `[[https://developer.android.com/reference/android/content/Context.html#getResources() getResources()]]`
+   */
   @inline def resources = basis.getResources
 
+
+  /**
+   * Shortcut for `[[https://developer.android.com/reference/android/content/Context.html#getTheme() getTheme()]]`
+   */
   @inline def theme = basis.getTheme
-  @inline def theme  (p: Int) =            theme_=  (p)
-  @inline def theme_=(p: Int) = { basis.setTheme    (p); basis }
 
+  /**
+   * Shortcut for `[[https://developer.android.com/reference/android/content/Context.html#setTheme(int) setTheme(int)]]`
+   */
+  @inline def theme  (p: Int) =            theme_=(p)
+
+  /**
+   * Shortcut for `[[https://developer.android.com/reference/android/content/Context.html#setTheme(int) setTheme(int)]]`
+   */
+  @inline def theme_=(p: Int) = { basis.setTheme(p); basis }
+
+
+  /**
+   * Shortcut for `[[https://developer.android.com/reference/android/content/Context.html#getWallpaper() getWallpaper()]]`
+   */
   @inline def wallpaper = basis.getWallpaper
-  @inline def wallpaper  (p: android.graphics.Bitmap) =            wallpaper_=  (p)
-  @inline def wallpaper_=(p: android.graphics.Bitmap) = { basis.setWallpaper    (p); basis }
-  @inline def wallpaper  (p: java.io.InputStream) =            wallpaper_=  (p)
-  @inline def wallpaper_=(p: java.io.InputStream) = { basis.setWallpaper    (p); basis }
 
+  /**
+   * Shortcut for `[[https://developer.android.com/reference/android/content/Context.html#setWallpaper(android.graphics.Bitmap) setWallpaper(android.graphics.Bitmap)]]`
+   */
+  @inline def wallpaper  (p: android.graphics.Bitmap) =            wallpaper_=(p)
+
+  /**
+   * Shortcut for `[[https://developer.android.com/reference/android/content/Context.html#setWallpaper(android.graphics.Bitmap) setWallpaper(android.graphics.Bitmap)]]`
+   */
+  @inline def wallpaper_=(p: android.graphics.Bitmap) = { basis.setWallpaper(p); basis }
+
+
+  /**
+   * Shortcut for `[[https://developer.android.com/reference/android/content/Context.html#setWallpaper(java.io.InputStream) setWallpaper(java.io.InputStream)]]`
+   */
+  @inline def wallpaper  (p: java.io.InputStream) =            wallpaper_=(p)
+
+  /**
+   * Shortcut for `[[https://developer.android.com/reference/android/content/Context.html#setWallpaper(java.io.InputStream) setWallpaper(java.io.InputStream)]]`
+   */
+  @inline def wallpaper_=(p: java.io.InputStream) = { basis.setWallpaper(p); basis }
+
+
+  /**
+   * Shortcut for `[[https://developer.android.com/reference/android/content/Context.html#getWallpaperDesiredMinimumHeight() getWallpaperDesiredMinimumHeight()]]`
+   */
   @inline def wallpaperDesiredMinimumHeight = basis.getWallpaperDesiredMinimumHeight
 
+
+  /**
+   * Shortcut for `[[https://developer.android.com/reference/android/content/Context.html#getWallpaperDesiredMinimumWidth() getWallpaperDesiredMinimumWidth()]]`
+   */
   @inline def wallpaperDesiredMinimumWidth = basis.getWallpaperDesiredMinimumWidth
 
 
@@ -189,26 +287,29 @@ trait SContext extends Context with TraitContext[SContext] with TagUtil {
 }
 
 /**
-* Automatically generated enriching class of android.content.ContextWrapper.
-*/
+ * Automatically generated enriching class of `[[https://developer.android.com/reference/android/content/ContextWrapper.html android.content.ContextWrapper]]`.
+ */
 class RichContextWrapper[V <: android.content.ContextWrapper](val basis: V) extends TraitContextWrapper[V]
 
 /**
- * Automatically generated helper trait of android.content.ContextWrapper. This contains several property accessors.
+ * Automatically generated helper trait of `[[https://developer.android.com/reference/android/content/ContextWrapper.html android.content.ContextWrapper]]`. This contains several property accessors.
  */
 trait TraitContextWrapper[V <: android.content.ContextWrapper] extends TraitContext[V] {
 
 
 
 
+  /**
+   * Shortcut for `[[https://developer.android.com/reference/android/content/ContextWrapper.html#getBaseContext() getBaseContext()]]`
+   */
   @inline def baseContext = basis.getBaseContext
 
 
 }
 
 /**
-* Automatically generated concrete helper class of android.content.ContextWrapper.
-*/
+ * Automatically generated concrete helper class of `[[https://developer.android.com/reference/android/content/ContextWrapper.html android.content.ContextWrapper]]`.
+ */
 class SContextWrapper()(implicit base: android.content.Context)
     extends android.content.ContextWrapper(base) with TraitContextWrapper[SContextWrapper] {
 
@@ -284,35 +385,65 @@ object SIntent {
  *
  * [[http://blog.scaloid.org/2013/03/introducing-localservice.html]]
  */
-class LocalServiceConnection[S <: LocalService](bindFlag: Int = Context.BIND_AUTO_CREATE)(implicit ctx: Context, reg: Registerable, ev: Null <:< S, mf: ClassTag[S]) extends ServiceConnection {
-  var service: S = null
+class LocalServiceConnection[S <: LocalService](bindFlag: Int = Context.BIND_AUTO_CREATE)(implicit ctx: Context, reg: Registerable, mf: ClassTag[S]) extends ServiceConnection {
+  var service: Option[S] = None
   var componentName:ComponentName = _
   var binder: IBinder = _
-  var onConnected = new EventSource0[Unit]
-  var onDisconnected = new EventSource0[Unit]
+  var onConnected = new EventSource1[S, Unit]
+  var onDisconnected = new EventSource1[S, Unit]
+
+  def run(f: S => Unit) {
+    if(service.isEmpty) onConnected(f) else service.map(f)
+  }
+
+  /**
+   * for example:
+   * val service = new LocalServiceConnection[MyService]
+   * //...
+   * service(_.doSomeJob())
+   */
+  def apply[T](f: S => T) = service.map(f)
+
+  /**
+   * for example:
+   * val service = new LocalServiceConnection[MyService]
+   * //...
+   * val foo = service(_.foo, defaultVal)
+   */
+  def apply[T](f: S => T, ifEmpty: => T) = if(service.isEmpty) ifEmpty else f(service.get)
+
+  /**
+   * for example:
+   * val service = new LocalServiceConnection[MyService]
+   * //...
+   * val result = service(_.foo > 3, "3 < " + _.foo, "fail")
+   */
+  def apply[T](test: S => Boolean, ifTrue: S => T, ifFalse: => T) = if(service.nonEmpty && test(service.get)) ifTrue(service.get) else ifFalse
 
   /**
    * Internal implementation for handling the service connection. You do not need to call this method.
    */
   def onServiceConnected(p1: ComponentName, b: IBinder) {
-    service = (b.asInstanceOf[LocalService#ScaloidServiceBinder]).service.asInstanceOf[S]
+    val svc = b.asInstanceOf[LocalService#ScaloidServiceBinder].service.asInstanceOf[S]
+    service = Option(svc)
     componentName = p1
     binder = b
-    onConnected.run()
+    onConnected.run(svc)
   }
 
   /**
    * Internal implementation for handling the service connection. You do not need to call this method.
    */
   def onServiceDisconnected(p1: ComponentName) {
-    service = null
-    onDisconnected.run()
+    val svc = service.get
+    service = None
+    onDisconnected.run(svc)
   }
 
   /**
    * Returns true if the service is currently connected.
    */
-  def connected: Boolean = service != null
+  def connected: Boolean = !service.isEmpty
 
   reg.onRegister {
     ctx.bindService(SIntent[S], this, bindFlag)

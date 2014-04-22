@@ -12,17 +12,19 @@ import scala.reflect._
 class EventSource0[T] extends ArrayBuffer[() => T] {
   def apply(e: => T) = append(() => e)
 
-  def run() {
-    foreach(_())
-  }
+  def run() = map(_())
 }
 
-class EventSource1[T <: Function1[_, _]] extends ArrayBuffer[T] {
-  def apply(e: T) = append(e)
+class EventSource1[Arg1, Ret] extends ArrayBuffer[Arg1 => Ret] {
+  def apply(e: Arg1 => Ret) = append(e)
+
+  def run(arg: Arg1) = map(_(arg))
 }
 
-class EventSource2[T <: Function2[_, _, _]] extends ArrayBuffer[T] {
-  def apply(e: T) = append(e)
+class EventSource2[Arg1, Arg2, Ret] extends ArrayBuffer[(Arg1, Arg2) => Ret] {
+  def apply(e: (Arg1, Arg2) => Ret) = append(e)
+
+  def run(arg1: Arg1, arg2: Arg2) = map(_(arg1, arg2))
 }
 
 /**
@@ -134,35 +136,65 @@ object SIntent {
  *
  * [[http://blog.scaloid.org/2013/03/introducing-localservice.html]]
  */
-class LocalServiceConnection[S <: LocalService](bindFlag: Int = Context.BIND_AUTO_CREATE)(implicit ctx: Context, reg: Registerable, ev: Null <:< S, mf: ClassTag[S]) extends ServiceConnection {
-  var service: S = null
+class LocalServiceConnection[S <: LocalService](bindFlag: Int = Context.BIND_AUTO_CREATE)(implicit ctx: Context, reg: Registerable, mf: ClassTag[S]) extends ServiceConnection {
+  var service: Option[S] = None
   var componentName:ComponentName = _
   var binder: IBinder = _
-  var onConnected = new EventSource0[Unit]
-  var onDisconnected = new EventSource0[Unit]
+  var onConnected = new EventSource1[S, Unit]
+  var onDisconnected = new EventSource1[S, Unit]
+
+  def run(f: S => Unit) {
+    if(service.isEmpty) onConnected(f) else service.map(f)
+  }
+
+  /**
+   * for example:
+   * val service = new LocalServiceConnection[MyService]
+   * //...
+   * service(_.doSomeJob())
+   */
+  def apply[T](f: S => T) = service.map(f)
+
+  /**
+   * for example:
+   * val service = new LocalServiceConnection[MyService]
+   * //...
+   * val foo = service(_.foo, defaultVal)
+   */
+  def apply[T](f: S => T, ifEmpty: => T) = if(service.isEmpty) ifEmpty else f(service.get)
+
+  /**
+   * for example:
+   * val service = new LocalServiceConnection[MyService]
+   * //...
+   * val result = service(_.foo > 3, "3 < " + _.foo, "fail")
+   */
+  def apply[T](test: S => Boolean, ifTrue: S => T, ifFalse: => T) = if(service.nonEmpty && test(service.get)) ifTrue(service.get) else ifFalse
 
   /**
    * Internal implementation for handling the service connection. You do not need to call this method.
    */
   def onServiceConnected(p1: ComponentName, b: IBinder) {
-    service = (b.asInstanceOf[LocalService#ScaloidServiceBinder]).service.asInstanceOf[S]
+    val svc = b.asInstanceOf[LocalService#ScaloidServiceBinder].service.asInstanceOf[S]
+    service = Option(svc)
     componentName = p1
     binder = b
-    onConnected.run()
+    onConnected.run(svc)
   }
 
   /**
    * Internal implementation for handling the service connection. You do not need to call this method.
    */
   def onServiceDisconnected(p1: ComponentName) {
-    service = null
-    onDisconnected.run()
+    val svc = service.get
+    service = None
+    onDisconnected.run(svc)
   }
 
   /**
    * Returns true if the service is currently connected.
    */
-  def connected: Boolean = service != null
+  def connected: Boolean = !service.isEmpty
 
   reg.onRegister {
     ctx.bindService(SIntent[S], this, bindFlag)

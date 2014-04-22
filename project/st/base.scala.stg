@@ -10,6 +10,10 @@ isEmpty ::= [
   "" : true
 ]
 
+isUnit ::= [
+  "Unit" : true
+]
+
 // Implicit 
 
 implicitConversions(pkg) ::= <<
@@ -49,14 +53,10 @@ $mixin; separator=" with "$
 richClassDef(base, mixin) ::= <<$_richClassDef(base.name)$>>
 _richClassDef(name) ::= <<
 
-/**
-* Automatically generated enriching class of $genType(base.tpe, true)$.
-*/
+$richClassScalaDoc(base)$
 class Rich$name$[V <: $genType(base.tpe, true)$](val basis: V) extends $helperTraitName(base)$[V]
 
-/**
- * Automatically generated helper trait of $genType(base.tpe, true)$. This contains several property accessors.
- */
+$helperTraitScalaDoc(base)$
 trait $helperTraitName(base)$[V <: $genType(base.tpe, true)$]$extendClause()$ {
 
   $if(! base.parentType)$def basis: V$endif$
@@ -75,9 +75,7 @@ prefixedClassDef(base) ::= <<$_prefixedClassDef(base, base.name, withClassPrefix
 
 _prefixedClassDef(base, name, sClassName, con) ::= <<
 $if(base.hasBlankConstructor || ClassBodies.(name) || FullConstructors.(name))$
-/**
-* Automatically generated concrete helper class of $genType(base.tpe, true)$.
-*/
+$prefixedClassScalaDoc(base)$
 class $sClassName$$customClassGenerics()$($customClassExplicitArgs()$)$classImplicitArgs()$
     extends $baseClassInstance()$ with $helperTraitName(base)$[$sClassName$$customSimpleClassGenerics()$] {
 
@@ -142,7 +140,12 @@ customClassBodies() ::= <<$customConst(CustomClassBodies, "")$>>
 CustomClassBodies ::= [
   "View" : {override val parentViewGroup = parentVGroup},
   "TextView" : <<
-def this(text: CharSequence, onClickListener: (View) => Unit)(implicit context: Context) = {
+def this(text: CharSequence)(implicit context: Context) = {
+  this()
+  this.text = text
+}
+
+def this(text: CharSequence, onClickListener: View => Unit)(implicit context: Context) = {
   this()
   this.text = text
   this.setOnClickListener(onClickListener)
@@ -155,9 +158,21 @@ def this(text: CharSequence, onClickListener: OnClickListener)(implicit context:
 }
 >>,
   "ImageView" : <<
-def this(imageResource: Int)(implicit context: Context) = {
+def this(imageResource: android.graphics.drawable.Drawable)(implicit context: Context) = {
   this()
-  this.imageResource = imageResource
+  this.imageDrawable = imageResource
+}
+
+def this(imageResource: android.graphics.drawable.Drawable, onClickListener: View => Unit)(implicit context: Context) = {
+  this()
+  this.imageDrawable = imageResource
+  this.setOnClickListener(onClickListener)
+}
+
+def this(imageResource: android.graphics.drawable.Drawable, onClickListener: OnClickListener)(implicit context: Context) = {
+  this()
+  this.imageDrawable = imageResource
+  this.setOnClickListener(onClickListener)
 }
 >>
 ]
@@ -198,27 +213,35 @@ def apply[LP <: ViewGroupLayoutParams[_, $sClassName$]](text: CharSequence, onCl
 }
 >>,
    "ImageView" : <<
-def apply[LP <: ViewGroupLayoutParams[_, $sClassName$]](imageResource: Int)
+def apply[LP <: ViewGroupLayoutParams[_, $sClassName$]](imageResource: android.graphics.drawable.Drawable)
     (implicit context: Context, defaultLayoutParam: ($sClassName$) => LP): $sClassName$ = {
   val v = new $sClassName$
-  v.imageResource = imageResource
+  v.imageDrawable = imageResource
   v.<<.parent.+=(v)
   v
 }
 
-def apply[LP <: ViewGroupLayoutParams[_, $sClassName$]](imageResource: Int, onClickListener: (View) => Unit)
+def apply[LP <: ViewGroupLayoutParams[_, $sClassName$]](imageResource: android.graphics.drawable.Drawable, onClickListener: (View) => Unit)
     (implicit context: Context, defaultLayoutParam: ($sClassName$) => LP): $sClassName$ = {
   apply(imageResource, func2ViewOnClickListener(onClickListener))
 }
 
-def apply[LP <: ViewGroupLayoutParams[_, $sClassName$]](imageResource: Int, onClickListener: OnClickListener)
+def apply[LP <: ViewGroupLayoutParams[_, $sClassName$]](imageResource: android.graphics.drawable.Drawable, onClickListener: OnClickListener)
     (implicit context: Context, defaultLayoutParam: ($sClassName$) => LP): $sClassName$ = {
   val v = new $sClassName$
-  v.imageResource = imageResource
+  v.imageDrawable = imageResource
   v.setOnClickListener(onClickListener)
   v.<<.parent.+=(v)
   v
 }
+>>,
+   "Paint" : <<
+def apply(color: Int): $sClassName$ = {
+  val v = new $sClassName$
+  v.color = color
+  v
+}
+
 >>,
   "ArrayAdapter" : <<
 def apply[T <: AnyRef : Manifest](items: T*)(implicit context: Context): $sClassName$[TextView, T] = new $sClassName$[TextView, T](items.toArray)
@@ -365,9 +388,15 @@ def $method.name$$paramedTypes(paramedTypes, true)$($namedArgs(method.argTypes)$
 
 unitCallbackMethod(method) ::= <<$callbackMethod(method, true)$>>
 
-fullListener(l) ::= <<
-@inline def $l.name$(f: $argTypes(l.argTypes)$ => $genType(l.retType)$): V = {
+commonListener(l, args = "") ::= <<
+$if(isUnit.(l.retType.name))$@inline def $l.name$[U](f: $args$ => U): V = {
+$else$@inline def $l.name$(f: $args$ => $genType(l.retType)$): V = {
+$endif$
   basis.$l.setter$(new $l.callbackClassName$ {
+>>
+
+fullListener(l) ::= <<
+$commonListener(l, argTypes(l.argTypes))$
     $l.callbackMethods:callbackMethod(); separator="\n"$
   })
   basis
@@ -375,8 +404,7 @@ fullListener(l) ::= <<
 >>
 
 unitListener(l) ::= <<
-@inline def $l.name$(f: => $genType(l.retType)$): V = {
-  basis.$l.setter$(new $l.callbackClassName$ {
+$commonListener(l)$
     $l.callbackMethods:unitCallbackMethod(); separator="\n"$
   })
   basis
@@ -408,6 +436,7 @@ noGetter(name) ::= <<
 
 getter(prop) ::= <<
 $if(prop.getter)$
+$methodScalaDoc(base, prop.getter)$
 @inline$override(prop.getter)$ def $prop.name; format="safe-ident"$ = basis.$prop.getter.name$
 $elseif( ! prop.nameClashes)$
 $noGetter(prop.name)$
@@ -415,16 +444,16 @@ $endif$
 >>
 
 setter(prop, method) ::= <<
-$_setter("  ", {           $prop.name$_=  (p)})$
-$_setter("_=", {{ basis.$method.name$    (p); basis \}})$
+$_setter("  ", {           $prop.name$_=(p)})$
+$_setter("_=", {{ basis.$method.name$(p); basis \}})$
 >>
 
-_setter(postFix, body) ::= <%$if( ! method.isAbstract || ! first(method.paramedTypes).name )$
-@inline def ${$prop.name$$postFix$}; format="safe-ident"$
-$paramedTypes(method.paramedTypes)$
-($namedArgs(method.argTypes)$) = $body$
+_setter(postFix, body) ::= <<
+$if( ! method.isAbstract || ! first(method.paramedTypes).name )$
+$methodScalaDoc(base, method)$
+@inline def ${$prop.name$$postFix$}; format="safe-ident"$$paramedTypes(method.paramedTypes)$($namedArgs(method.argTypes)$) = $body$
 $endif$
-%>
+>>
 
 switch(name, setter) ::= <<
 $if(setter.name)$
@@ -440,9 +469,9 @@ $switch(prop.switch, first(prop.setters))$
 $endif$
 >>
 
-property(prop) ::= <<$getter(prop)$$setters(prop)$>>
+property(prop) ::= <%$getter(prop)$$setters(prop)$%>
 
-properties(base) ::= <<$base.properties:property()$>>
+properties(base) ::= <%$base.properties:{ prop | $property(prop)$}$%>
 
 
 // service
@@ -451,6 +480,45 @@ systemServiceHead(base) ::= <<
 @inline def $decap(base.name)$(implicit context: Context) =
   context.getSystemService(Context.$base.name; format="manager-to-service"$).asInstanceOf[$base.tpe.name$]
 
+>>
+
+
+// scaladoc
+
+androidDocBase() ::= <<https://developer.android.com/reference>>
+
+androidClassUrl(cls) ::= <<$androidDocBase()$/$cls.pkg; format="dot-to-slash"$/$cls.name$.html>>
+
+androidReference(cls) ::= <<`[[$androidClassUrl(cls)$ $genType(cls.tpe, true)$]]`>>
+
+methodSignature(method, sep) ::= <<$method.name$($method.argTypes:{ arg |$arg.javaName$}; separator=sep$)>>
+
+androidMethodReference(cls, method) ::= <%
+`[[$androidClassUrl(cls)$#$methodSignature(method, ",\%20")$ $methodSignature(method, ", ")$]]`
+%>
+
+methodScalaDoc(cls, method) ::= <<
+/**
+ * Shortcut for $androidMethodReference(cls, method)$
+ */
+>>
+
+richClassScalaDoc(cls) ::= <<
+/**
+ * Automatically generated enriching class of $androidReference(cls)$.
+ */
+>>
+
+helperTraitScalaDoc(cls) ::= <<
+/**
+ * Automatically generated helper trait of $androidReference(cls)$. This contains several property accessors.
+ */
+>>
+
+prefixedClassScalaDoc(cls) ::= <<
+/**
+ * Automatically generated concrete helper class of $androidReference(cls)$.
+ */
 >>
 
 // etc

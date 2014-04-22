@@ -3,6 +3,7 @@ $license()$
 package org.scaloid.common
 
 import android.content._
+import android.database.Cursor
 import android.graphics.Movie
 import android.graphics.drawable.Drawable
 import android.net.Uri
@@ -10,17 +11,20 @@ import android.view._
 import language.implicitConversions
 
 private[scaloid] class UnitConversion(val ext: Double)(implicit context: Context) {
-  def dip: Int = (ext * context.getResources().getDisplayMetrics().density).toInt
-  def sp : Int = (ext * context.getResources().getDisplayMetrics().scaledDensity).toInt
+  @inline private def m = context.getResources.getDisplayMetrics
+  @inline def dip   : Int = (ext * m.density).toInt
+  @inline def sp    : Int = (ext * m.scaledDensity).toInt
+  @inline def px2dip: Double = ext / m.density
+  @inline def px2sp : Double = ext / m.scaledDensity
 }
 
 private[scaloid] class ResourceConversion(val id: Int)(implicit context: Context) {
-  def r2Text         : CharSequence        = context.getText(id)
-  def r2TextArray    : Array[CharSequence] = context.getResources.getTextArray(id)
-  def r2String       : String              = context.getResources.getString(id)
-  def r2StringArray  : Array[String]       = context.getResources.getStringArray(id)
-  def r2Drawable     : Drawable            = context.getResources.getDrawable(id)
-  def r2Movie        : Movie               = context.getResources.getMovie(id)
+  @inline def r2Text         : CharSequence        = context.getText(id)
+  @inline def r2TextArray    : Array[CharSequence] = context.getResources.getTextArray(id)
+  @inline def r2String       : String              = context.getResources.getString(id)
+  @inline def r2StringArray  : Array[String]       = context.getResources.getStringArray(id)
+  @inline def r2Drawable     : Drawable            = context.getResources.getDrawable(id)
+  @inline def r2Movie        : Movie               = context.getResources.getMovie(id)
 }
 
 trait ConversionImplicits {
@@ -87,6 +91,38 @@ trait InterfaceImplicits {
 }
 object InterfaceImpliciits extends InterfaceImplicits
 
+class RichCursor(c: Cursor) extends Iterable[Cursor] {
+  def iterator = new CursorIterator
 
-trait Implicits extends ConversionImplicits with InterfaceImplicits with ViewImplicits with WidgetImplicits
+  class CursorIterator extends Iterator[Cursor] {
+    def hasNext = c.getPosition < c.getCount - 1
+
+    def next() = {
+      c.moveToNext()
+      c
+    }
+  }
+
+  def closeAfter[T](body: RichCursor => T) = try body(this) finally c.close()
+
+  def orm[T](body: Cursor => T) = closeAfter(_.map(body).toList)
+
+  def toLong(default: Long): Long = closeAfter(csr => if (c.moveToFirst()) c.getLong(0) else default)
+
+  def toString(default: String): String = closeAfter(csr => if (c.moveToFirst()) c.getString(0) else default)
+
+  def toShort(default: Short): Short = closeAfter(csr => if (c.moveToFirst()) c.getShort(0) else default)
+
+  def toInt(default: Int): Int = closeAfter(csr => if (c.moveToFirst()) c.getInt(0) else default)
+
+  def toDouble(default: Double): Double = closeAfter(csr => if (c.moveToFirst()) c.getDouble(0) else default)
+
+  def toFloat(default: Float): Float = closeAfter(csr => if (c.moveToFirst()) c.getFloat(0) else default)
+}
+
+trait DatabaseImplicits {
+  implicit def cursor2RichCursor(c: Cursor) = new RichCursor(c)
+}
+
+trait Implicits extends ConversionImplicits with InterfaceImplicits with ViewImplicits with WidgetImplicits with DatabaseImplicits
 object Implicits extends Implicits

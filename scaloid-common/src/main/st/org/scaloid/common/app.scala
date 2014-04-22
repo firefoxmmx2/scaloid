@@ -4,6 +4,7 @@ package org.scaloid.common
 
 import android.app._
 import android.content._
+import android.graphics.drawable.{Drawable, StateListDrawable}
 import android.os._
 import android.view._
 import android.view.WindowManager.LayoutParams._
@@ -22,6 +23,8 @@ trait TraitActivity[V <: Activity] {
   @inline def contentView(p: View) = contentView_=(p)
 
   $noGetter("contentView")$
+
+  def intent = Some[Intent](basis.getIntent)
 
   def basis: Activity
 
@@ -152,31 +155,6 @@ trait SActivity extends Activity with SContext with TraitActivity[SActivity] wit
   }
 }
 
-/**
- * Follows a parent's action of onBackPressed().
- * When an activity is a tab that hosted by TabActivity, you may want a common back-button action for each tab.
- *
- * Please refer to [[http://stackoverflow.com/questions/2796050/key-events-in-tabactivities]]
- */
-@deprecated("Use org.scaloid.util package instead. This will be removed from Scaloid 3.0.", "2.0")
-trait FollowParentBackButton extends SActivity {
-  override def onBackPressed() {
-    val p = getParent
-    if (p != null) p.onBackPressed()
-  }
-}
-
-/**
- * Turn screen on and show the activity even if the screen is locked.
- * This is useful when notifying some important information.
- */
-@deprecated("Use org.scaloid.util package instead. This will be removed from Scaloid 3.0.", "2.0")
-trait ScreenOnActivity extends SActivity {
-  onCreate {
-    getWindow.addFlags(FLAG_DISMISS_KEYGUARD | FLAG_SHOW_WHEN_LOCKED | FLAG_TURN_SCREEN_ON)
-  }
-}
-
 
 /**
  * Enriched trait of the class android.app.Service. To enable Scaloid support for subclasses of android.app.Service, extend this trait.
@@ -297,6 +275,39 @@ class AlertDialogBuilder(_title: CharSequence = null, _message: CharSequence = n
   override def show():AlertDialog = runOnUiThread(super.show())
 }
 
+/**
+ * Scaloid wrapper of android.graphics.drawable.StateListDrawable.
+ * You can write StateListDrawable simply, for example:
+ * {{{
+ * new SStateListDrawable {
+ *   +=(R.drawable.pressed, PRESSED)
+ *   +=(R.drawable.normal)
+ * }
+ * }}}
+ */
+class SStateListDrawable extends StateListDrawable {
+  val ABOVE_ANCHOR = android.R.attr.state_above_anchor
+  val ACTIVE = android.R.attr.state_active
+  val CHECKABLE = android.R.attr.state_checkable
+  val CHECKED = android.R.attr.state_checked
+  val EMPTY = android.R.attr.state_empty
+  val ENABLED = android.R.attr.state_enabled
+  val EXPANDED = android.R.attr.state_expanded
+  val FIRST = android.R.attr.state_first
+  val FOCUSED = android.R.attr.state_focused
+  val LAST = android.R.attr.state_last
+  val LONG_PRESSABLE = android.R.attr.state_long_pressable
+  val MIDDLE = android.R.attr.state_middle
+  val PRESSED = android.R.attr.state_pressed
+  val SELECTED = android.R.attr.state_selected
+  val SINGLE = android.R.attr.state_single
+  val WINDOW_FOCUSED = android.R.attr.state_window_focused
+
+  def +=(drawable: Drawable, states: Int*): SStateListDrawable = {
+    addState(states.toArray, drawable)
+    this
+  }
+}
 trait TraitSmsManager[V <: SmsManager] {
   val SMS_URI = "content://sms"
   val SMS_URI_INBOX = "content://sms/inbox"

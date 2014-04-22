@@ -12,6 +12,8 @@ trait JavaConversionHelpers {
       case _ => cls.getInterfaces.headOption
     }
 
+  def isPublic(m: Member): Boolean = Modifier.isPublic(m.getModifiers)
+  def isPublic(c: Class[_]): Boolean = Modifier.isPublic(c.getModifiers)
   def isAbstract(m: Member): Boolean = Modifier.isAbstract(m.getModifiers)
   def isAbstract(c: Class[_]): Boolean = Modifier.isAbstract(c.getModifiers)
   def isFinal(m: Member): Boolean = Modifier.isFinal(m.getModifiers)
@@ -87,7 +89,22 @@ trait JavaConversionHelpers {
             throw new Error("Cannot find type of " + tpe.getClass + " ::" + tpe.toString)
         }
     }
-    step(_tpe, 0)
+
+    def javaTypeName(t: Type) =
+      t.toString.replaceFirst("^[^ ]+ ", "").replace("$", ".")
+
+    val javaName =
+      _tpe match {
+        case c: Class[_] =>
+          if (c.isArray) javaTypeName(c.getComponentType) + "[]"
+          else if (c.isPrimitive) _tpe.toString
+          else c.getCanonicalName
+
+        case _ => // TODO match generic types
+          javaTypeName(_tpe)
+      }
+
+    step(_tpe, 0).copy(javaName = javaName)
   }
 
   def toTypeStr(_tpe: Type, isVarArgs: Boolean, isLast: Boolean): String = {

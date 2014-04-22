@@ -11,7 +11,7 @@ object Dependencies {
 
   val android = "com.google.android" % "android" % "2.2.1" % "provided"
   val android_support_v4 = "com.google.android" % "support-v4" % "r7" % "provided"
-  val scaloidVersion = "2.4-8-SNAPSHOT"
+  val scaloidVersion = "3.4-8-SNAPSHOT"
   val scaloid = "org.scaloid" %% "scaloid" % scaloidVersion
 }
 
@@ -27,7 +27,8 @@ object ScaloidBuild extends Build {
     organizationHomepage := Some(new URL("http://blog.scaloid.org")),
     description := "Less Painful Android Development with Scala",
     startYear := Some(2012),
-    scalaVersion := "2.10.2",
+    scalaVersion := "2.11.0",
+    version := scaloidVersion,
     resolvers ++= Dependencies.resolutionRepos,
     publishMavenStyle := true,
     publishTo <<= version {
@@ -42,7 +43,7 @@ object ScaloidBuild extends Build {
       _ => false
     },
     pomExtra :=
-      <url>http://jsuereth.com/scala-arm</url>
+      <url>http://scaloid.org</url>
         <licenses>
           <license>
             <name>The Apache Software License, Version 2.0</name>
@@ -84,13 +85,11 @@ object ScaloidBuild extends Build {
 
   lazy val common = Project("scaloid", file("scaloid-common"))
     .settings(name := "scaloid", exportJars := true)
-    .settings(version := scaloidVersion)
     .settings(basicSettings: _*)
     .settings(scaloidSettings: _*)
 
   lazy val support_v4 = Project("support-v4", file("scaloid-support-v4"))
     .settings(name := "scaloid-support-v4", exportJars := true)
-    .settings(version := "2.2.0-8")
     .settings(basicSettings: _*)
     .settings(scaloidSettings: _*)
     .settings(libraryDependencies += android_support_v4)
@@ -99,7 +98,6 @@ object ScaloidBuild extends Build {
 
   lazy val util = Project("util", file("scaloid-util"))
     .settings(name := "scaloid-util", exportJars := true)
-    .settings(version := "2.2.0-8")
     .settings(basicSettings: _*)
     .settings(scaloidSettings: _*)
     .settings(libraryDependencies += scaloid)
